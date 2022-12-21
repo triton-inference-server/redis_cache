@@ -1,4 +1,4 @@
-#include "local_cache.h"
+#include "redis_cache.h"
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
@@ -18,7 +18,7 @@ TRITONCACHE_CacheNew(TRITONCACHE_Cache** cache, const char* cache_config)
         TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
   }
 
-  std::unique_ptr<LocalCache> lcache;
+  std::unique_ptr<RedisCache> lcache;
   RETURN_IF_ERROR(LocalCache::Create(cache_config, &lcache));
   *cache = reinterpret_cast<TRITONCACHE_Cache*>(lcache.release());
   return nullptr;  // success
