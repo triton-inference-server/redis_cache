@@ -32,22 +32,33 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "triton/common/model_config.h"
-#include "triton/common/logging.h"
-#include "infer_stats.h"
-#include "response_cache.h"
+#include "triton/core/tritoncache.h"
+#include "triton/core/tritonserver.h"
 #include <sw/redis++/redis++.h>
 
 
-template <typename Tkv>
-struct RedisCacheEntry {
-  std::string key;
+
+namespace triton { namespace cache { namespace redis {
+
+
+
+// cache entry structure
+// in redis this will look like
+// key - > b_1 : buffer
+//         s_1 : size
+//         b_2 : buffer
+//         s_2 : size
+//         ...
+//         b_n : buffer
+//         s_n : size
+//
+// this provides the ability to store more attributes
+// of the buffer in the future if need be.
+struct CacheEntry {
   int num_entries = 1;
-  std::unordered_map<Tkv, Tkv> fields;
+  std::unordered_map<std::string, std::string> items_;
 };
 
-
-namespace triton { namespace cache { namespace core {
 
 #define RETURN_IF_ERROR(X)        \
   do {                            \
@@ -63,11 +74,12 @@ class RedisCache {
   ~RedisCache();
 
   // Create the request/response cache object
-  static TRITONSERVER_Error* Create(std::string address, std::string username, std::string password, std::unique_ptr<RequestResponseCache>* cache);
+  static TRITONSERVER_Error* Create(
+      const std::string& cache_config, std::unique_ptr<RedisCache>* cache);
 
   // Lookup key in cache and return the data associated with it
   // Return TRITONSERVER_Error* object indicating success or failure.
-  std::pair<TRITONSERVER_Error*, RedisCacheEntry> Lookup(const std::string& key);
+  std::pair<TRITONSERVER_Error*, CacheEntry> Lookup(const std::string& key);
 
   // Insert entry into cache, evict entries to make space if necessary
   // Return TRITONSERVER_Error* object indicating success or failure.
@@ -83,20 +95,17 @@ class RedisCache {
 
   TRITONSERVER_Error* Flush() {
     // empty the entire database (mostly used in testing)
-   _client->flushall();
+    _client->flushall();
+    return nullptr;
    // TODO return an error if it fails
   }
-
 
  private:
   explicit RedisCache(std::string address, std::string username, std::string password);
 
   // get/set
-  Status cache_set(RedisCacheEntry<std::string> &cache_entry);
-  Status cache_get(RedisCacheEntry<std::string> *cache_entry);
-  // helpers
-  //std::string suffix_key(std::string key, int suffix);
-  //std::vector<int64_t> get_dims(std::string dim_str);
+  TRITONSERVER_Error* cache_set(std::string key, CacheEntry &cache_entry);
+  std::pair<TRITONSERVER_Error*, CacheEntry> cache_get(std::string key);
 
   std::unique_ptr<sw::redis::Redis> _client;
 };

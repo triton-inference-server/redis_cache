@@ -26,6 +26,8 @@
 
 cmake_minimum_required(VERSION 3.17)
 project(tritonrediscache LANGUAGES C CXX)
+set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #
 # Options
@@ -71,6 +73,7 @@ configure_file(src/libtritoncache_redis.ldscript libtritoncache_redis.ldscript C
 
 add_library(
   triton-redis-cache SHARED
+  src/cache_api.cc
   src/redis_cache.cc
 )
 

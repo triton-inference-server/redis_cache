@@ -2,7 +2,12 @@
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
-namespace triton { namespace cache { namespace local {
+namespace triton { namespace cache { namespace redis {
+
+std::string suffix_key(std::string key, int suffix) {
+  std::string s_key = key + "_" + std::to_string(suffix);
+  return s_key;
+}
 
 extern "C" {
 
@@ -19,7 +24,7 @@ TRITONCACHE_CacheNew(TRITONCACHE_Cache** cache, const char* cache_config)
   }
 
   std::unique_ptr<RedisCache> lcache;
-  RETURN_IF_ERROR(LocalCache::Create(cache_config, &lcache));
+  RETURN_IF_ERROR(RedisCache::Create(cache_config, &lcache));
   *cache = reinterpret_cast<TRITONCACHE_Cache*>(lcache.release());
   return nullptr;  // success
 }
@@ -32,7 +37,7 @@ TRITONCACHE_CacheDelete(TRITONCACHE_Cache* cache)
         TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
   }
 
-  delete reinterpret_cast<LocalCache*>(cache);
+  delete reinterpret_cast<RedisCache*>(cache);
   return nullptr;  // success
 }
 
@@ -48,27 +53,38 @@ TRITONCACHE_CacheLookup(
         TRITONSERVER_ERROR_INVALID_ARG, "cache entry was nullptr");
   }
 
-  const auto lcache = reinterpret_cast<LocalCache*>(cache);
-  auto [err, lentry] = lcache->Lookup(key);
+  const auto redis_cache = reinterpret_cast<RedisCache*>(cache);
+  auto [err, redis_entry] = redis_cache->Lookup(key);
   if (err != nullptr) {
     return err;
   }
 
-  for (const auto& item : lentry.items_) {
+  int entries = redis_entry.num_entries;
+  std::unordered_map<std::string, std::string> values = redis_entry.items_;
+  for (int i = 1; i <= entries; i++) {
     TRITONCACHE_CacheEntryItem* triton_item = nullptr;
     RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemNew(&triton_item));
-    for (const auto& [buffer, byte_size] : item.buffers_) {
-      if (!buffer || !byte_size) {
-        return TRITONSERVER_ErrorNew(
-            TRITONSERVER_ERROR_INTERNAL, "buffer was null or size was zero");
-      }
 
-      // DLIS-2673: Add better memory_type support
-      TRITONSERVER_MemoryType memory_type = TRITONSERVER_MEMORY_CPU;
-      int64_t memory_type_id = 0;
-      RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemAddBuffer(
-          triton_item, buffer, byte_size, memory_type, memory_type_id));
+    std::string byte_size_str = values.at(suffix_key("s", i));
+    if (byte_size_str.empty()) {
+      return TRITONSERVER_ErrorNew(
+          TRITONSERVER_ERROR_INTERNAL, "byte size was empty");
     }
+    size_t byte_size = std::stoul(byte_size_str);
+
+
+    std::string buffer_str = values.at(suffix_key("b", i));
+    if (buffer_str.empty()) {
+      return TRITONSERVER_ErrorNew(
+          TRITONSERVER_ERROR_INTERNAL, "buffer was empty");
+    }
+    const void* buffer = buffer_str.c_str();
+
+    // DLIS-2673: Add better memory_type support
+    TRITONSERVER_MemoryType memory_type = TRITONSERVER_MEMORY_CPU;
+    int64_t memory_type_id = 0;
+    RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemAddBuffer(
+        triton_item, buffer, byte_size, memory_type, memory_type_id));
 
     // Pass ownership of triton_item to Triton to avoid copy. Triton will
     // be responsible for cleaning it up, so do not call CacheEntryItemDelete.
@@ -93,8 +109,10 @@ TRITONCACHE_CacheInsert(
         TRITONSERVER_ERROR_INVALID_ARG, "key was nullptr");
   }
 
-  const auto lcache = reinterpret_cast<LocalCache*>(cache);
-  if (lcache->Exists(key)) {
+  const auto redis_cache = reinterpret_cast<RedisCache*>(cache);
+
+  // TODO debate whether we should allow overwrites
+  if (redis_cache->Exists(key)) {
     return TRITONSERVER_ErrorNew(
         TRITONSERVER_ERROR_ALREADY_EXISTS,
         (std::string("key '") + key + std::string("' already exists")).c_str());
@@ -104,7 +122,7 @@ TRITONCACHE_CacheInsert(
   RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemCount(entry, &num_items));
 
   // Form cache representation of CacheEntry from Triton
-  CacheEntry lentry;
+  CacheEntry redis_entry;
   for (size_t item_index = 0; item_index < num_items; item_index++) {
     TRITONCACHE_CacheEntryItem* item = nullptr;
     RETURN_IF_ERROR(TRITONCACHE_CacheEntryGetItem(entry, item_index, &item));
@@ -112,8 +130,7 @@ TRITONCACHE_CacheInsert(
     size_t num_buffers = 0;
     RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemBufferCount(item, &num_buffers));
 
-    // Form cache representation of CacheEntryItem from Triton
-    CacheEntryItem litem;
+    // add all buffers and sizes to the entry
     for (size_t buffer_index = 0; buffer_index < num_buffers; buffer_index++) {
       void* base = nullptr;
       size_t byte_size = 0;
@@ -136,14 +153,14 @@ TRITONCACHE_CacheInsert(
             TRITONSERVER_ERROR_INTERNAL, "buffer size was zero");
       }
 
-      // Cache will replace this base pointer with a new cache-allocated base
-      // pointer internally on Insert()
-      litem.buffers_.emplace_back(std::make_pair(base, byte_size));
+      redis_entry.items_.insert(
+          {suffix_key("b", item_index + 1), std::string((char*)base)});
+      redis_entry.items_.insert(
+          {suffix_key("s", item_index + 1), std::to_string(byte_size)});
     }
-    lentry.items_.emplace_back(litem);
   }
 
-  RETURN_IF_ERROR(lcache->Insert(key, lentry));
+  RETURN_IF_ERROR(redis_cache->Insert(key, redis_entry));
   return nullptr;  // success
 }
 
