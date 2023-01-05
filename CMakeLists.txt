@@ -24,10 +24,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.21)
 project(tritonrediscache LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ExternalProject Dependencies
+#
+# For each ExternalProject dependency we use PATCH_COMMAND to copy the
+# project source into TRITON_THIRD_PARTY_SRC_INSTALL_PREFIX. If
+# TRITON_THIRD_PARTY_SRC_INSTALL_PREFIX is not set then source will
+# not be installed. Note that PATCH_COMMAND is executed after the
+# source is downloaded/updated and is not defined by default so it
+# allows a good point to perform the source install.
+#
+include(ExternalProject)
 
 #
 # Options
@@ -64,7 +75,12 @@ FetchContent_Declare(
   GIT_TAG ${TRITON_CORE_REPO_TAG}
   GIT_SHALLOW ON
 )
+
 FetchContent_MakeAvailable(repo-common repo-core)
+
+## Add redis++ library to the project
+find_library(REDISPP redis++ PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
+find_library(HIREDIS hiredis PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
 
 #
 # Shared library implementing the Triton Cache API
@@ -89,6 +105,7 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+
 target_compile_features(triton-redis-cache PRIVATE cxx_std_20)
 target_compile_options(
   triton-redis-cache PRIVATE
@@ -98,6 +115,9 @@ target_compile_options(
 
 target_link_libraries(
   triton-redis-cache
+  PUBLIC
+    ${HIREDIS}
+    ${REDISPP}
   PRIVATE
     triton-core-serverapi   # from repo-core
     triton-core-cacheapi    # from repo-core
@@ -137,6 +157,7 @@ install(
   DESTINATION
     ${INSTALL_CONFIGDIR}
 )
+
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(

@@ -30,7 +30,7 @@
 
 # Triton Redis Cache
 
-This repo contains an example 
+This repo contains an example
 [cache](https://github.com/triton-inference-server/core/blob/main/include/triton/core/tritoncache.h)
 for caching data with Redis.
 
@@ -42,13 +42,12 @@ page](https://github.com/triton-inference-server/server/issues).
 Use a recent cmake to build. First install the required dependencies.
 
 ```
-# TODO
+$ source build_deps.sh
 ```
 
-To build the cache:
+To build the cache library:
 
 ```
-$ mkdir build
 $ cd build
 $ cmake -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install ..
 $ make install
@@ -59,18 +58,20 @@ the build. By default the "main" branch/tag will be used for each repo
 but the following CMake arguments can be used to override.
 
 * triton-inference-server/core: `-D TRITON_CORE_REPO_TAG=[tag]`
-* triton-inference-server/common: `-D TRITON_COMMON_REPO_TAG=[tag]` 
+* triton-inference-server/common: `-D TRITON_COMMON_REPO_TAG=[tag]`
 
-## Using the Cache 
+## Using the Cache
 
 The cache is configured by a JSON file passed through the
-`tritonserver --cache-config config.json` CLI flag. The JSON
-file is parsed by the Cache implementation, so the fields required
-are up to the cache implementer.
+`tritonserver --cache-config config.json` CLI flag. These arguments
+correspond directly to the ``redis-plus-plus`` client connection arguments.
 
-```
+For example
+
+```json
 {
-  "key": "value" # TODO
+  "address": "127.0.0.1:6379",
+  "username": "bob",
+  "password": "supersecretpassword"
 }
 ```
-
