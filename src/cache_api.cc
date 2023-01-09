@@ -12,7 +12,7 @@ std::string suffix_key(std::string key, int suffix) {
 extern "C" {
 
 TRITONSERVER_Error*
-TRITONCACHE_CacheNew(TRITONCACHE_Cache** cache, const char* cache_config)
+TRITONCACHE_CacheInitialize(TRITONCACHE_Cache** cache, const char* cache_config)
 {
   if (cache == nullptr) {
     return TRITONSERVER_ErrorNew(
@@ -20,7 +20,7 @@ TRITONCACHE_CacheNew(TRITONCACHE_Cache** cache, const char* cache_config)
   }
   if (cache_config == nullptr) {
     return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
+        TRITONSERVER_ERROR_INVALID_ARG, "cache config was nullptr");
   }
 
   std::unique_ptr<RedisCache> lcache;
@@ -30,7 +30,7 @@ TRITONCACHE_CacheNew(TRITONCACHE_Cache** cache, const char* cache_config)
 }
 
 TRITONSERVER_Error*
-TRITONCACHE_CacheDelete(TRITONCACHE_Cache* cache)
+TRITONCACHE_CacheFinalize(TRITONCACHE_Cache* cache)
 {
   if (cache == nullptr) {
     return TRITONSERVER_ErrorNew(
@@ -166,4 +166,4 @@ TRITONCACHE_CacheInsert(
 
 }  // extern "C"
 
-}}}  // namespace triton::cache::local
+}}}  // namespace triton::cache::redis
