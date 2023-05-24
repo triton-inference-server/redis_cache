@@ -11,6 +11,29 @@ std::string suffix_key(std::string key, int suffix) {
 
 extern "C" {
 
+// Helper
+TRITONSERVER_Error*
+CheckArgs(
+    TRITONCACHE_Cache* cache, const char* key, TRITONCACHE_CacheEntry* entry,
+    TRITONCACHE_Allocator* allocator)
+{
+  if (cache == nullptr) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
+  } else if (entry == nullptr) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INVALID_ARG, "cache entry was nullptr");
+  } else if (key == nullptr) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INVALID_ARG, "key was nullptr");
+  } else if (allocator == nullptr) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INVALID_ARG, "allocator was nullptr");
+  }
+
+  return nullptr;  // success
+}
+
 TRITONSERVER_Error*
 TRITONCACHE_CacheInitialize(TRITONCACHE_Cache** cache, const char* cache_config)
 {
@@ -23,9 +46,9 @@ TRITONCACHE_CacheInitialize(TRITONCACHE_Cache** cache, const char* cache_config)
         TRITONSERVER_ERROR_INVALID_ARG, "cache config was nullptr");
   }
 
-  std::unique_ptr<RedisCache> lcache;
-  RETURN_IF_ERROR(RedisCache::Create(cache_config, &lcache));
-  *cache = reinterpret_cast<TRITONCACHE_Cache*>(lcache.release());
+  std::unique_ptr<RedisCache> rcache;
+  RETURN_IF_ERROR(RedisCache::Create(cache_config, &rcache));
+  *cache = reinterpret_cast<TRITONCACHE_Cache*>(rcache.release());
   return nullptr;  // success
 }
 
@@ -43,15 +66,9 @@ TRITONCACHE_CacheFinalize(TRITONCACHE_Cache* cache)
 
 TRITONSERVER_Error*
 TRITONCACHE_CacheLookup(
-    TRITONCACHE_Cache* cache, const char* key, TRITONCACHE_CacheEntry* entry)
+    TRITONCACHE_Cache* cache, const char* key, TRITONCACHE_CacheEntry* entry, TRITONCACHE_Allocator* allocator)
 {
-  if (cache == nullptr) {
-    return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
-  } else if (entry == nullptr) {
-    return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "cache entry was nullptr");
-  }
+  RETURN_IF_ERROR(CheckArgs(cache, key, entry, allocator));
 
   const auto redis_cache = reinterpret_cast<RedisCache*>(cache);
   auto [err, redis_entry] = redis_cache->Lookup(key);
@@ -80,11 +97,21 @@ TRITONCACHE_CacheLookup(
     }
     const void* buffer = buffer_str.c_str();
 
-    // DLIS-2673: Add better memory_type support
-    TRITONSERVER_MemoryType memory_type = TRITONSERVER_MEMORY_CPU;
-    int64_t memory_type_id = 0;
+    // Create and set buffer attributes
+    // DLIS-2673: Add better memory_type support, default to CPU memory for
+    // now
+    TRITONSERVER_BufferAttributes* buffer_attributes = nullptr;
+    RETURN_IF_ERROR(TRITONSERVER_BufferAttributesNew(&buffer_attributes));
+    RETURN_IF_ERROR(TRITONSERVER_BufferAttributesSetByteSize(
+        buffer_attributes, byte_size));
+    RETURN_IF_ERROR(TRITONSERVER_BufferAttributesSetMemoryType(
+        buffer_attributes, TRITONSERVER_MEMORY_CPU));
+    RETURN_IF_ERROR(
+        TRITONSERVER_BufferAttributesSetMemoryTypeId(buffer_attributes, 0));
+    // Add buffer then clean up
     RETURN_IF_ERROR(TRITONCACHE_CacheEntryItemAddBuffer(
-        triton_item, buffer, byte_size, memory_type, memory_type_id));
+        triton_item, buffer, buffer_attributes));
+    RETURN_IF_ERROR(TRITONSERVER_BufferAttributesDelete(buffer_attributes));
 
     // Pass ownership of triton_item to Triton to avoid copy. Triton will
     // be responsible for cleaning it up, so do not call CacheEntryItemDelete.
@@ -96,19 +123,10 @@ TRITONCACHE_CacheLookup(
 
 TRITONSERVER_Error*
 TRITONCACHE_CacheInsert(
-    TRITONCACHE_Cache* cache, const char* key, TRITONCACHE_CacheEntry* entry)
+    TRITONCACHE_Cache* cache, const char* key, TRITONCACHE_CacheEntry* entry, TRITONCACHE_Allocator* allocator)
 {
-  if (cache == nullptr) {
-    return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "cache was nullptr");
-  } else if (entry == nullptr) {
-    return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "cache entry was nullptr");
-  } else if (key == nullptr) {
-    return TRITONSERVER_ErrorNew(
-        TRITONSERVER_ERROR_INVALID_ARG, "key was nullptr");
-  }
 
+  RETURN_IF_ERROR(CheckArgs(cache, key, entry, allocator));
   const auto redis_cache = reinterpret_cast<RedisCache*>(cache);
 
   // TODO debate whether we should allow overwrites

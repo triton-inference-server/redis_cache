@@ -40,20 +40,37 @@
 
 namespace triton { namespace cache { namespace redis {
 
+using Metadata =
+    std::tuple<void*, size_t, std::shared_ptr<TRITONSERVER_BufferAttributes>>;
 
 
-// cache entry structure
-// in redis this will look like
-// key - > b_1 : buffer
-//         s_1 : size
-//         b_2 : buffer
-//         s_2 : size
-//         ...
-//         b_n : buffer
-//         s_n : size
+// cache entry structure in Redis
+// {key}.entries -> num_entries
+// {key}.{i} -> b_{i} : buffer
+//              m_{i} : metadata
+//              b_{i+1} : buffer
+//              m_{i+1} : metadata
+//              ...
+//              b_{n} : buffer
+//              m_{n} : metadata
 //
-// this provides the ability to store more attributes
-// of the buffer in the future if need be.
+// {key}.{i+1} -> b_{i} : buffer
+//                m_{i} : metadata
+//                b_{i+1} : buffer
+//                m_{i+1} : metadata
+//                ...
+//                b_{n} : buffer
+//                m_{n} : metadata
+//
+// Redis "hash tags" are used to group keys together
+// so that they are stored in the same hash slot.
+// This is useful for storing multiple entries for a
+// single key in the same hash slot.
+// All keys for a single entry will be grouped into a
+// pipeline which can be directed to a single shard.
+// {key}.entries be retrieved first which will
+// determine the number of entries for a given key.
+
 struct CacheEntry {
   int num_entries = 1;
   std::unordered_map<std::string, std::string> items_;
@@ -102,6 +119,13 @@ class RedisCache {
 
  private:
   explicit RedisCache(std::string address, std::string username, std::string password);
+
+  TRITONSERVER_Error* RedisCache::Allocate(uint64_t byte_size, void** buffer);
+
+  // Parse and validate fields from Triton entry, store relevant fields
+  // for building cache entry in metadata
+  TRITONSERVER_Error* ParseTritonEntry(
+      TRITONCACHE_CacheEntry* entry, std::vector<Metadata>& metadata);
 
   // get/set
   TRITONSERVER_Error* cache_set(std::string key, CacheEntry &cache_entry);

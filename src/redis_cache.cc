@@ -123,6 +123,39 @@ RedisCache::~RedisCache()
   this->_client.reset();
 }
 
+TRITONSERVER_Error*
+RedisCache::Allocate(uint64_t byte_size, void** buffer)
+{
+  // NOTE: Could have more fine-grained locking, or remove Evict()
+  //       from this function and call separately
+  std::unique_lock lk(buffer_mu_);
+
+  // Requested buffer larger than total buffer
+  if (byte_size > managed_buffer_.get_size()) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INTERNAL,
+        std::string(
+            "Requested byte_size: " + std::to_string(byte_size) +
+            " is greater than total cache size: " +
+            std::to_string(managed_buffer_.get_size()))
+            .c_str());
+  }
+  // Attempt to allocate buffer from current available space
+  void* lbuffer = nullptr;
+  while (!lbuffer) {
+    lbuffer = managed_buffer_.allocate(byte_size, std::nothrow_t{});
+    // There wasn't enough available space, so evict and try again
+    if (!lbuffer) {
+      // Fail if we run out of things to evict
+      RETURN_IF_ERROR(Evict());
+    }
+  }
+  // Return allocated buffer
+  *buffer = lbuffer;
+  return nullptr;  // success
+}
+
+
 bool RedisCache::Exists(const std::string& key) {
   return this->_client->exists(key);
 }

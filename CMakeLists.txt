@@ -78,6 +78,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(repo-common repo-core)
 
+## Run the build_deps.sh script with execute_process
+execute_process(
+  COMMAND ./build_deps.sh
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 ## Add redis++ library to the project
 find_library(REDISPP redis++ PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
 find_library(HIREDIS hiredis PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
