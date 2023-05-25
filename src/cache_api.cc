@@ -89,33 +89,35 @@ TRITONCACHE_CacheLookup(
   RETURN_IF_ERROR(CheckArgs(cache, key, entry, allocator));
 
   const auto redis_cache = reinterpret_cast<RedisCache*>(cache);
-  auto [err, redis_entry] = redis_cache->Lookup(key);
+  auto [err, redisEntry] = redis_cache->Lookup(key);
   if (err != nullptr) {
     return err;
   }
 
-  size_t numBuffers = redis_entry.numBuffers;
-  std::unordered_map<std::string, std::string> values = redis_entry.items;
+  size_t numBuffers = redisEntry.numBuffers;
+  std::unordered_map<std::string, std::string> values = redisEntry.items;
   for (size_t i = 1; i <= numBuffers; i++) {
     auto bufferFieldName = getFieldName(i, fieldType::buffer);
     auto bufferSizeFieldName = getFieldName(i, fieldType::bufferSize);
     auto memoryTypeFieldName = getFieldName(i, fieldType::memoryType);
 
-    if(!(redis_entry.items.contains(bufferFieldName) && redis_entry.items.contains(bufferSizeFieldName) && redis_entry.items.contains(memoryTypeFieldName))){
+    if(!(redisEntry.items.contains(bufferFieldName) &&
+          redisEntry.items.contains(bufferSizeFieldName) &&
+          redisEntry.items.contains(memoryTypeFieldName))){
       auto msg = "Error: encountered incomplete cache result.";
       return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg);
     }
     TRITONSERVER_BufferAttributes* attrs = nullptr;
 
-    size_t bufferSize = std::stoul(redis_entry.items.at(bufferSizeFieldName));
-    int memoryTypeIntegralValue = std::stoi(redis_entry.items.at(memoryTypeFieldName));
+    size_t bufferSize = std::stoul(redisEntry.items.at(bufferSizeFieldName));
+    int memoryTypeIntegralValue = std::stoi(redisEntry.items.at(memoryTypeFieldName));
 
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesNew(&attrs));
 
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesSetByteSize(attrs, bufferSize));
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesSetMemoryType(attrs, (TRITONSERVER_memorytype_enum)memoryTypeIntegralValue));
 
-    RETURN_IF_ERROR(TRITONCACHE_CacheEntryAddBuffer(entry, (void*)redis_entry.items.at(bufferFieldName).c_str(), attrs));
+    RETURN_IF_ERROR(TRITONCACHE_CacheEntryAddBuffer(entry, (void*)redisEntry.items.at(bufferFieldName).c_str(), attrs));
   }
 
   RETURN_IF_ERROR(TRITONCACHE_Copy(allocator, entry));
