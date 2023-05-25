@@ -12,6 +12,20 @@ cd ./third-party
 
 CMAKE=$(which cmake)
 
+# Install RapidJson
+if ls ../build/install/include/rapidjson/document.h 1>/dev/null 2>&1; then
+  echo "rapidjson already installed"
+else
+  if [[ ! -d "./rapidjson" ]]; then
+    git clone https://github.com/Tencent/rapidjson/
+  fi
+  cd rapidjson
+  cp -r include/* ../../build/install/include/
+  cd ..
+  echo "Finished installing rapidjson"
+fi
+
+
 # Install Hiredis
 if ls ../build/install/lib/libhiredis.a 1>/dev/null 2>&1; then
     echo "Hiredis has already been installed"

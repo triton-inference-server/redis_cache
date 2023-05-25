@@ -47,9 +47,7 @@ include(ExternalProject)
 # projects included in this one by FetchContent.
 #
 set(TRITON_COMMON_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/common repo")
-# TODO: set default branch name to main
-set(TRITON_CORE_REPO_TAG "rmccormick-cache-api" CACHE STRING "Tag for triton-inference-server/core repo")
-#set(TRITON_CORE_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/core repo")
+set(TRITON_CORE_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/core repo")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -85,8 +83,8 @@ execute_process(
 )
 
 ## Add redis++ library to the project
-find_library(REDISPP redis++ PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
-find_library(HIREDIS hiredis PATHS ${CMAKE_CURRENT_BINARY_DIR}/install/lib NO_DEFAULT_PATH REQUIRED)
+find_library(REDISPP redis++ PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
+find_library(HIREDIS hiredis PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
 
 #
 # Shared library implementing the Triton Cache API
@@ -103,6 +101,7 @@ add_library(
   TritonRedisCache::triton-redis-cache ALIAS triton-redis-cache
 )
 
+include_directories(build/install/include)
 target_include_directories(
   triton-redis-cache
   PUBLIC
