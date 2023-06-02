@@ -1,0 +1,27 @@
+version: "3.7"
+
+services:
+  redis:
+    image: redis
+    ports:
+    - '6379:6379'
+  triton-server:
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    # image: "nvcr.io/nvidia/tritonserver:23.03-py3"
+    links:
+      - redis
+    build: 
+      context: .
+    command: tritonserver --cache-config redis,address=redis:6379 --model-repository=/models
+    ports:
+      - '8000:8000'
+      - '8001:8001'
+      - '8002:8002'
+    volumes:
+      - /home/slorello/projects/triton/server/docs/examples/model_repository:/models

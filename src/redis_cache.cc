@@ -42,6 +42,7 @@ std::unique_ptr<sw::redis::Redis> init_client(
     const std::string& password) {
   // Put together cluster configuration.
   sw::redis::ConnectionOptions options;
+  std::cout << "Address is: " << address << std::endl;
 
   const std::string::size_type comma_pos = address.find(',');
   const std::string host = comma_pos == std::string::npos ? address : address.substr(0, comma_pos);
@@ -62,6 +63,8 @@ std::unique_ptr<sw::redis::Redis> init_client(
   // Connect to cluster.
   std::cout << "Connecting via " << options.host << ':' << options.port << "..." << std::endl;
   std::unique_ptr<sw::redis::Redis> redis = std::make_unique<sw::redis::Redis>(options, pool_options);
+  auto res = redis->ping("pong");
+  std::cout << "result from redis: " << res << std::endl;
   return redis;
 }
 
@@ -136,6 +139,7 @@ RedisCache::Lookup(const std::string& key)
   try{
     this->_client->hgetall(key, std::inserter(entry.items,entry.items.begin()));
     entry.numBuffers = entry.items.size() / 3;
+    std::cout << "Num buffers: " << entry.numBuffers << std::endl;
     return {nullptr, entry};
   }
   catch (sw::redis::TimeoutError &e){
