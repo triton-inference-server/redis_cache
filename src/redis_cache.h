@@ -87,7 +87,7 @@ class RedisCache {
   }
 
  private:
-  explicit RedisCache(std::string address, std::string username, std::string password);
+  explicit RedisCache(const std::string& address, const std::string& username, const std::string& password);
 
   std::unique_ptr<sw::redis::Redis> _client;
 };

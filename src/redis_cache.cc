@@ -25,8 +25,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sstream>
-#include <cstdio>
-#include <iterator>
 
 #include "redis_cache.h"
 #include "rapidjson/document.h"
@@ -83,7 +81,7 @@ RedisCache::Create(
   }
   std::string address = document["address"].GetString();
   std::string username = "default";
-  std::string password = "";
+  std::string password;
 
   // set username and password if provided
   if (document.HasMember("username")) {
@@ -107,9 +105,9 @@ RedisCache::Create(
 // TODO: add support for all connection options
 // https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h#L40
 RedisCache::RedisCache(
-  std::string address,
-  std::string username,
-  std::string password)
+  const std::string& address,
+  const std::string& username,
+  const std::string& password)
 {
 
   try {
