@@ -139,7 +139,6 @@ RedisCache::Lookup(const std::string& key)
   try{
     this->_client->hgetall(key, std::inserter(entry.items,entry.items.begin()));
     entry.numBuffers = entry.items.size() / 3;
-    std::cout << "Num buffers: " << entry.numBuffers << std::endl;
     return {nullptr, entry};
   }
   catch (sw::redis::TimeoutError &e){
