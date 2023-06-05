@@ -62,16 +62,69 @@ but the following CMake arguments can be used to override.
 
 ## Using the Cache
 
-The cache is configured by a JSON file passed through the
-`tritonserver --cache-config config.json` CLI flag. These arguments
-correspond directly to the ``redis-plus-plus`` client connection arguments.
+### Deploying to Triton
 
-For example
+In order for the Redis Cache to be deployed to triton, you must build the
+binary (see build instructions), and copy the `libtritoncache_redis.so` file
+to the folder `redis` in the cache directory on the server you are running
+triton from, by default this will be `/opt/tritonserver/caches` - but this can
+be adjusted by use of the `--cache-dir` CLI option as needed.
 
-```json
-{
-  "address": "127.0.0.1:6379",
-  "username": "bob",
-  "password": "supersecretpassword"
+### Configuration
+
+The cache is configured by the using `--cache-config` CLI options.
+The `--cache-config` option is variadic, meaning it can be repeated multiple
+times to set multiple configuration fields. The format of a `--cache-config`
+option is `<cache_name>,<key>=<value>`. At a minimum you must provide a `host`
+and `port` to allow the client to connect to Redis:
+
+```
+tritonserver --cache-config redis,host=redis --cache-config redis,port=6379 
+```
+
+### Available Configuration Options
+
+
+| Configuration Option | Required | Description                                                                                                                                 | Default |
+|----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| host | Yes | The hostname or IP address of the server where Redis is running.                                                                            | N/A |
+| port | Yes | The port number to connect to on the server.                                                                                                | N/A |
+| user | No | The username to use for authentication of the ACLs to the Redis Server                                                                      | default |
+| password | No | The password to Redis.                                                                                                                      | N/A |
+| db | No | The db number to user. NOTE - use of the db number is considered an anti-pattern in Redis, so it is advised that you do not use this option | 0 |
+| connect_timeout | No | The maximum time, in milliseconds to wait for a connection to be established to Redis. 0 means wait forever                                 | 0 |
+| socket_timeout | No | The maximum time, in milliseconds the client will wait for a response from Redis. 0 means wait forever                                      | 0 |
+| pool_size | No | The number pooled connections to Redis the client will maintain.                                                                            | 1 |
+| wait_timeout | No | The maximum time, in milliseconds to wait for a connection from the pool.                                                                   | 100 |
+
+
+## Example
+
+You can try out the Redis Cache with Triton in docker:
+
+* clone this repo: `git clone https://github.com/triton-inference-server/redis_cache`
+* clone the Triton server repo: `git clone https://github.com/triton-inference-server`
+* Add the following to: `docs/examples/model_repository/densenet_onnx/config.pbtxt`
+```
+response_cache{
+  enable:true
 }
 ```
+* cd into `redis_cache`
+* Install [NVIDIA's container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+* Create an account on [ngc](https://ngc.nvidia.com/)
+* Log docker into to NVIDIA's container repository:
+```
+docker login nvcr.io
+
+Username: $oauthtoken
+Password: <MY API KEY>
+```
+> NOTE: Username: $oauthtoken in this context means that your username is literally $oauthtoken - your API key serves as the unique part of your credentials
+* run `docker-compose build`
+* run `docker-compose up`
+* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.03-py3-sdk`
+* Run `/workspace/install/bin/image_client -m densenet_onnx -c 3 -s INCEPTION /workspace/images/mug.jpg`
+  * on the first run - this will miss the cache
+  * subsequent runs will pull the inference out of the cache
+  * you can validate this by watching Redis with `docker exec -it redis_cache_triton-redis_1 redis-cli monitor`

@@ -35,6 +35,7 @@
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 #include <sw/redis++/redis++.h>
+#include <sw/redis++/connection.h>
 
 
 
@@ -87,7 +88,7 @@ class RedisCache {
   }
 
  private:
-  explicit RedisCache(const std::string& address, const std::string& username, const std::string& password);
+  explicit RedisCache(const sw::redis::ConnectionOptions& connectionOptions, const sw::redis::ConnectionPoolOptions& poolOptions);
 
   std::unique_ptr<sw::redis::Redis> _client;
 };

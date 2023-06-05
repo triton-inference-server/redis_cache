@@ -35,32 +35,8 @@ namespace triton::cache::redis {
 
 
 std::unique_ptr<sw::redis::Redis> init_client(
-    const std::string& address,
-    const std::string& user_name,
-    const std::string& password) {
-  // Put together cluster configuration.
-  sw::redis::ConnectionOptions options;
-  std::cout << "Address is: " << address << std::endl;
-
-  const std::string::size_type comma_pos = address.find(',');
-  const std::string host = comma_pos == std::string::npos ? address : address.substr(0, comma_pos);
-  const std::string::size_type colon_pos = host.find(':');
-  if (colon_pos == std::string::npos) {
-    options.host = host;
-  } else {
-    options.host = host.substr(0, colon_pos);
-    options.port = std::stoi(host.substr(colon_pos + 1));
-  }
-  options.user = user_name;
-  options.password = password;
-  options.keep_alive = true;
-
-  sw::redis::ConnectionPoolOptions pool_options;
-  pool_options.size = 1;
-
-  // Connect to cluster.
-  std::cout << "Connecting via " << options.host << ':' << options.port << "..." << std::endl;
-  std::unique_ptr<sw::redis::Redis> redis = std::make_unique<sw::redis::Redis>(options, pool_options);
+    const sw::redis::ConnectionOptions& connectionOptions, sw::redis::ConnectionPoolOptions poolOptions) {
+  std::unique_ptr<sw::redis::Redis> redis = std::make_unique<sw::redis::Redis>(connectionOptions, poolOptions);
   auto res = redis->ping("pong");
   std::cout << "result from redis: " << res << std::endl;
   return redis;
@@ -74,25 +50,52 @@ RedisCache::Create(
   rapidjson::Document document;
 
   document.Parse(cache_config.c_str());
-  if (!document.HasMember("address")) {
+  std::cout << cache_config << std::endl <<std::flush;
+  if (!document.HasMember("host") || !document.HasMember("port")) {
     return TRITONSERVER_ErrorNew(
         TRITONSERVER_ERROR_INVALID_ARG,
-        "Failed to initialize RedisCache, didn't specify address.");
+        "Failed to initialize RedisCache, didn't specify address. Must at a minimum specify 'host' and 'port' in the configuration - e.g. tritonserver --cache-config redis,host=redis --cache-config redis,port=6379 --model-repository=/models ...");
   }
-  std::string address = document["address"].GetString();
-  std::string username = "default";
-  std::string password;
 
-  // set username and password if provided
-  if (document.HasMember("username")) {
-    username = document["username"].GetString();
+  sw::redis::ConnectionOptions options;
+  sw::redis::ConnectionPoolOptions poolOptions;
+
+  if(document.HasMember("host")){
+    options.host = document["host"].GetString();
   }
-  if (document.HasMember("password")) {
-    password = document["password"].GetString();
+  if(document.HasMember("port")){
+    options.port = std::atoi(document["port"].GetString());
+  }
+  if(document.HasMember("user")){
+    options.user = document["user"].GetString();
+  }
+  if(document.HasMember("password")){
+    options.password = document["password"].GetString();
+  }
+  if(document.HasMember("db")){
+    options.db = std::atoi(document["db"].GetString());
+  }
+  if(document.HasMember("connect_timeout")){
+    auto ms = std::atoi(document["connect_timeout"].GetString());
+    options.connect_timeout = std::chrono::milliseconds(ms);
+  }
+  if(document.HasMember("socket_timeout")){
+    auto ms = std::atoi(document["socket_timeout"].GetString());
+    options.socket_timeout = std::chrono::milliseconds(ms);
+  }
+  if(document.HasMember("pool_size")){
+    poolOptions.size = std::atoi(document["pool_size"].GetString());
+  }
+  if(document.HasMember("wait_timeout")){
+    auto ms = std::atoi(document["wait_timeout"].GetString());
+    poolOptions.wait_timeout = std::chrono::milliseconds(ms);
+  }
+  else{
+    poolOptions.wait_timeout = std::chrono::milliseconds(100);
   }
 
   try {
-    cache->reset(new RedisCache(address, username, password));
+    cache->reset(new RedisCache(options, poolOptions));
   }
   catch (const std::exception& ex) {
     return TRITONSERVER_ErrorNew(
@@ -105,13 +108,11 @@ RedisCache::Create(
 // TODO: add support for all connection options
 // https://github.com/sewenew/redis-plus-plus/blob/master/src/sw/redis%2B%2B/connection.h#L40
 RedisCache::RedisCache(
-  const std::string& address,
-  const std::string& username,
-  const std::string& password)
+  const sw::redis::ConnectionOptions& connectionOptions, const sw::redis::ConnectionPoolOptions& poolOptions)
 {
 
   try {
-    this->_client = init_client(address, username, password);
+    this->_client = init_client(connectionOptions, poolOptions);
   }
   catch (const std::exception& ex) {
     throw std::runtime_error(
