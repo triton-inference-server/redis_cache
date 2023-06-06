@@ -39,6 +39,12 @@ page](https://github.com/triton-inference-server/server/issues).
 
 ## Build the Cache
 
+If you don't have it installed already - install rapidjson-dev:
+
+```bash
+apt install rapidjson-dev
+```
+
 Use a recent cmake to build and run the following:
 
 ```
