@@ -93,6 +93,13 @@ tritonserver --cache-config redis,host=redis --cache-config redis,port=6379
 | wait_timeout | No | The maximum time, in milliseconds to wait for a connection from the pool.                                                                   | 100 |
 
 
+## Monitoring and Observability
+
+There are many ways to go about monitoring what's going on in Redis. One popular mode is to export metrics data from Redis to Prometheus, and use Grafana to observe them.
+
+* If you're using OSS Redis, use the [Redis Exporter](https://grafana.com/oss/prometheus/exporters/redis-exporter/) to export metrics from Redis into.
+* If you're using [Redis Enterprise](https://docs.redis.com/latest/rs/clusters/monitoring/prometheus-integration/) or [Redis Cloud](https://docs.redis.com/latest/rc/cloud-integrations/prometheus-integration/) you can use the built-in integrations for Prometheus
+
 ## Example
 
 You can try out the Redis Cache with Triton in docker:
