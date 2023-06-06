@@ -39,15 +39,10 @@ page](https://github.com/triton-inference-server/server/issues).
 
 ## Build the Cache
 
-Use a recent cmake to build. First install the required dependencies.
+Use a recent cmake to build and run the following:
 
 ```
-$ source build_deps.sh
-```
-
-To build the cache library:
-
-```
+$ mkdir build
 $ cd build
 $ cmake -DCMAKE_INSTALL_PREFIX:PATH=`pwd`/install ..
 $ make install
@@ -112,7 +107,7 @@ response_cache{
 ```
 * cd into `redis_cache`
 * Install [NVIDIA's container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-* Create an account on [ngc](https://ngc.nvidia.com/)
+* Create an account on [NGC](https://ngc.nvidia.com/)
 * Log docker into to NVIDIA's container repository:
 ```
 docker login nvcr.io

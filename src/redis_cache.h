@@ -26,17 +26,16 @@
 
 #pragma once
 
+#include <iostream>
 #include <list>
 #include <string>
-#include <iostream>
 #include <string_view>
 #include <unordered_map>
 
+#include <sw/redis++/connection.h>
+#include <sw/redis++/redis++.h>
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
-#include <sw/redis++/redis++.h>
-#include <sw/redis++/connection.h>
-
 
 
 namespace triton::cache::redis {
@@ -80,17 +79,12 @@ class RedisCache {
   // Return true if key exists in cache, false otherwise.
   bool Exists(const std::string& key);
 
-  TRITONSERVER_Error* Flush() {
-    // empty the entire database (mostly used in testing)
-    _client->flushall();
-    return nullptr;
-   // TODO return an error if it fails
-  }
-
  private:
-  explicit RedisCache(const sw::redis::ConnectionOptions& connectionOptions, const sw::redis::ConnectionPoolOptions& poolOptions);
+  explicit RedisCache(
+      const sw::redis::ConnectionOptions& connectionOptions,
+      const sw::redis::ConnectionPoolOptions& poolOptions);
 
   std::unique_ptr<sw::redis::Redis> _client;
 };
 
-}  // namespace triton::redis
+}  // namespace triton::cache::redis
