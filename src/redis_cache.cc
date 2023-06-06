@@ -31,6 +31,11 @@
 #include "triton/common/logging.h"
 #include "triton/core/tritoncache.h"
 
+
+// This is the number of fields that are created to each buffer to marshall
+// the buffer back to Triton
+#define FIELDS_PER_BUFFER 4
+
 namespace triton::cache::redis {
 
 
@@ -144,7 +149,10 @@ RedisCache::Lookup(const std::string& key)
   try {
     this->_client->hgetall(
         key, std::inserter(entry.items, entry.items.begin()));
-    entry.numBuffers = entry.items.size() / 3;
+
+    // determine the number of buffers by dividing the size by the number of
+    // fields per buffer
+    entry.numBuffers = entry.items.size() / FIELDS_PER_BUFFER;
     return {nullptr, entry};
   }
   catch (sw::redis::TimeoutError& e) {

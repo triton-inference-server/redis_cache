@@ -29,17 +29,6 @@ project(tritonrediscache LANGUAGES C CXX)
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ExternalProject Dependencies
-#
-# For each ExternalProject dependency we use PATCH_COMMAND to copy the
-# project source into TRITON_THIRD_PARTY_SRC_INSTALL_PREFIX. If
-# TRITON_THIRD_PARTY_SRC_INSTALL_PREFIX is not set then source will
-# not be installed. Note that PATCH_COMMAND is executed after the
-# source is downloaded/updated and is not defined by default so it
-# allows a good point to perform the source install.
-#
-include(ExternalProject)
-
 #
 # Options
 #
@@ -127,6 +116,7 @@ target_link_libraries(
     triton-core-serverapi   # from repo-core
     triton-core-cacheapi    # from repo-core
     triton-core-serverstub  # from repo-core
+    triton-common-logging   # from-repo-common
 )
 
 set_target_properties(

@@ -4,7 +4,7 @@
 
 namespace triton::cache::redis {
 
-enum fieldType { buffer, bufferSize, memoryType, memoryTypeId, cudaIpcHandle };
+enum fieldType { buffer, bufferSize, memoryType, memoryTypeId };
 
 std::string
 getFieldName(size_t bufferNumber, fieldType fieldType)
@@ -18,8 +18,6 @@ getFieldName(size_t bufferNumber, fieldType fieldType)
       return std::to_string(bufferNumber) + ":t";
     case memoryTypeId:
       return std::to_string(bufferNumber) + ":i";
-    case cudaIpcHandle:
-      return std::to_string(bufferNumber) + ":c";
   }
   return "";
 }

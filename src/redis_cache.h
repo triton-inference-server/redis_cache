@@ -37,7 +37,9 @@
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
-
+// This is the number of fields that are attached to each key to pull back the
+// buffers and meta-data required to marshall the
+#define FIELDS_PER_KEY = 4
 namespace triton::cache::redis {
 
 using Metadata =

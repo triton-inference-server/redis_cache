@@ -65,16 +65,21 @@ to the folder `redis` in the cache directory on the server you are running
 triton from, by default this will be `/opt/tritonserver/caches` - but this can
 be adjusted by use of the `--cache-dir` CLI option as needed.
 
+It is also required that Redis be running on a system reachable by Triton.
+There are many ways to deploy Redis, to learn how to get started with Redis
+look at Redis's [getting started guide](https://redis.io/docs/getting-started/).
+
 ### Configuration
 
 The cache is configured by the using `--cache-config` CLI options.
 The `--cache-config` option is variadic, meaning it can be repeated multiple
 times to set multiple configuration fields. The format of a `--cache-config`
 option is `<cache_name>,<key>=<value>`. At a minimum you must provide a `host`
-and `port` to allow the client to connect to Redis:
+and `port` to allow the client to connect to Redis e.g. let's try connecting to
+a redis instance living on the hose `redis-host` and listening on port `6379`:
 
 ```
-tritonserver --cache-config redis,host=redis --cache-config redis,port=6379 
+tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
 ```
 
 ### Available Configuration Options
