@@ -6,6 +6,13 @@ services:
     ports:
     - '6379:6379'
   triton-server:
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
     links:
       -   triton-redis
     build: 
