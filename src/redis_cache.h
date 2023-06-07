@@ -39,10 +39,6 @@
 
 namespace triton::cache::redis {
 
-using Metadata =
-    std::tuple<void*, size_t, std::shared_ptr<TRITONSERVER_BufferAttributes>>;
-
-
 struct CacheEntry {
   size_t numBuffers = 0;
   std::unordered_map<std::string, std::string> items;
