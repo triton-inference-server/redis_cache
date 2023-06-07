@@ -37,9 +37,6 @@
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
-// This is the number of fields that are attached to each key to pull back the
-// buffers and meta-data required to marshall the
-#define FIELDS_PER_KEY = 4
 namespace triton::cache::redis {
 
 using Metadata =
@@ -47,10 +44,13 @@ using Metadata =
 
 
 struct CacheEntry {
-  size_t numBuffers = 1;
+  size_t numBuffers = 0;
   std::unordered_map<std::string, std::string> items;
 };
 
+// This is the number of fields that are created to each buffer to marshall
+// the buffer back to Triton
+constexpr uint32_t FIELDS_PER_BUFFER = 4;
 
 #define RETURN_IF_ERROR(X)        \
   do {                            \
@@ -76,10 +76,6 @@ class RedisCache {
   // Insert entry into cache, evict entries to make space if necessary
   // Return TRITONSERVER_Error* object indicating success or failure.
   TRITONSERVER_Error* Insert(const std::string& key, CacheEntry& entry);
-
-  // Checks if key exists in cache
-  // Return true if key exists in cache, false otherwise.
-  bool Exists(const std::string& key);
 
  private:
   explicit RedisCache(

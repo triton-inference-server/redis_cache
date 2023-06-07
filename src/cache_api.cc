@@ -103,9 +103,11 @@ TRITONCACHE_CacheLookup(
     auto memoryTypeFieldName = getFieldName(i, fieldType::memoryType);
     auto memoryTypeIdFieldName = getFieldName(i, fieldType::memoryTypeId);
 
-    if (!(redisEntry.items.contains(bufferFieldName) &&
+    if (redisEntry.items.size() % FIELDS_PER_BUFFER != 0 ||
+        !(redisEntry.items.contains(bufferFieldName) &&
           redisEntry.items.contains(bufferSizeFieldName) &&
-          redisEntry.items.contains(memoryTypeFieldName))) {
+          redisEntry.items.contains(memoryTypeFieldName) &&
+          redisEntry.items.contains(memoryTypeIdFieldName))) {
       auto msg = "Error: encountered incomplete cache result.";
       return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg);
     }
@@ -124,7 +126,7 @@ TRITONCACHE_CacheLookup(
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesSetMemoryType(
         attrs, (TRITONSERVER_memorytype_enum)memoryTypeIntegralValue));
 
-    const void *buffer = redisEntry.items.at(bufferFieldName).c_str();
+    const void* buffer = redisEntry.items.at(bufferFieldName).c_str();
 
     RETURN_IF_ERROR(
         TRITONCACHE_CacheEntryAddBuffer(entry, (void*)buffer, attrs));
@@ -200,6 +202,15 @@ TRITONCACHE_CacheInsert(
     redis_entry.items.insert(std::make_pair(
         getFieldName(i, fieldType::buffer),
         std::string(managedBuffers.at(i).get(), bytesToCopy)));
+  }
+
+  // sanity check to make sure we are inserting items into the cache that are
+  // comprised of the right number of fields to allow us to marshall
+  // the buffer back from Redis later on.
+  if (redis_entry.items.size() % FIELDS_PER_BUFFER != 0) {
+    return TRITONSERVER_ErrorNew(
+        TRITONSERVER_ERROR_INVALID_ARG,
+        "Attempted to add incomplete entry to cache");
   }
 
   RETURN_IF_ERROR(redis_cache->Insert(key, redis_entry));

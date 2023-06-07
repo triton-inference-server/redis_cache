@@ -31,13 +31,7 @@
 #include "triton/common/logging.h"
 #include "triton/core/tritoncache.h"
 
-
-// This is the number of fields that are created to each buffer to marshall
-// the buffer back to Triton
-#define FIELDS_PER_BUFFER 4
-
 namespace triton::cache::redis {
-
 
 std::unique_ptr<sw::redis::Redis>
 init_client(
@@ -133,12 +127,6 @@ RedisCache::RedisCache(
 RedisCache::~RedisCache()
 {
   this->_client.reset();
-}
-
-bool
-RedisCache::Exists(const std::string& key)
-{
-  return this->_client->exists(key);
 }
 
 std::pair<TRITONSERVER_Error*, CacheEntry>
