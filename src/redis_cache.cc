@@ -40,36 +40,50 @@ init_client(
 {
   std::unique_ptr<sw::redis::Redis> redis =
       std::make_unique<sw::redis::Redis>(connectionOptions, poolOptions);
-  auto res = redis->ping("pong");
-  LOG_VERBOSE("Successfully connected to Redis");
+  const auto msg = "Triton RedisCache client connected";
+  if (redis->ping(msg) != msg) {
+    throw std::runtime_error("Failed to ping Redis server.");
+  }
+
+  LOG_VERBOSE(1) << "Successfully connected to Redis";
   return redis;
 }
 
 
-template<typename T>
-void setOption(const char* key, T& option, rapidjson::Document& document){
-  if(document.HasMember(key)){
+template <typename T>
+void
+setOption(const char* key, T& option, rapidjson::Document& document)
+{
+  if (document.HasMember(key)) {
     option = document[key].GetString();
   }
 }
 
-template<>
-void setOption(const char* key, int& option, rapidjson::Document& document){
-  if(document.HasMember(key)){
+template <>
+void
+setOption(const char* key, int& option, rapidjson::Document& document)
+{
+  if (document.HasMember(key)) {
     option = std::atoi(document[key].GetString());
   }
 }
 
-template<>
-void setOption(const char* key, size_t& option, rapidjson::Document& document){
-  if(document.HasMember(key)){
+template <>
+void
+setOption(const char* key, size_t& option, rapidjson::Document& document)
+{
+  if (document.HasMember(key)) {
     option = std::strtol(document[key].GetString(), nullptr, 10);
   }
 }
 
-template<>
-void setOption(const char* key, std::chrono::milliseconds& option, rapidjson::Document& document){
-  if(document.HasMember(key)){
+template <>
+void
+setOption(
+    const char* key, std::chrono::milliseconds& option,
+    rapidjson::Document& document)
+{
+  if (document.HasMember(key)) {
     auto ms = std::atoi(document[key].GetString());
     option = std::chrono::milliseconds(ms);
   }
@@ -104,7 +118,7 @@ RedisCache::Create(
   setOption("socket_timeout", options.socket_timeout, document);
   setOption("pool_size", poolOptions.size, document);
   setOption("wait_timeout", poolOptions.wait_timeout, document);
-  if (!document.HasMember("wait_timeout")){
+  if (!document.HasMember("wait_timeout")) {
     poolOptions.wait_timeout = std::chrono::milliseconds(100);
   }
 
@@ -114,8 +128,7 @@ RedisCache::Create(
   catch (const std::exception& ex) {
     return TRITONSERVER_ErrorNew(
         TRITONSERVER_ERROR_INTERNAL,
-        ("Failed to initialize Response Cache: " + std::string(ex.what()))
-            .c_str());
+        ("Failed to initialize RedisCache: " + std::string(ex.what())).c_str());
   }
   return nullptr;  // success
 }
@@ -128,9 +141,7 @@ RedisCache::RedisCache(
     this->_client = init_client(connectionOptions, poolOptions);
   }
   catch (const std::exception& ex) {
-    throw std::runtime_error(
-        ("Failed to initialize Response Cache: " + std::string(ex.what()))
-            .c_str());
+    throw std::runtime_error(ex.what());
   }
 }
 
@@ -142,14 +153,16 @@ RedisCache::~RedisCache()
 std::pair<TRITONSERVER_Error*, CacheEntry>
 RedisCache::Lookup(const std::string& key)
 {
-  auto handleError = [&key](const std::string& message, const char* cause = nullptr){
-    std::ostringstream msg;
-    msg << message << key << " from cache";
-    if(cause){
-      msg << ' ' << cause;
-    }
-    return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
-  };
+  auto handleError =
+      [&key](const std::string& message, const char* cause = nullptr) {
+        std::ostringstream msg;
+        msg << message << key << " from cache.";
+        if (cause) {
+          msg << ' ' << cause;
+        }
+        return TRITONSERVER_ErrorNew(
+            TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
+      };
 
   CacheEntry entry;
 
@@ -166,24 +179,26 @@ RedisCache::Lookup(const std::string& key)
     return {handleError("Timeout retrieving key: ", e.what()), {}};
   }
   catch (sw::redis::IoError& e) {
-    return {handleError("Failed to retrieve key:", e.what()), {}};
+    return {handleError("Failed to retrieve key: ", e.what()), {}};
   }
   catch (...) {
-    return {handleError("Failed to retrieve key:"), {}};
+    return {handleError("Failed to retrieve key: "), {}};
   }
 }
 
 TRITONSERVER_Error*
 RedisCache::Insert(const std::string& key, CacheEntry& entry)
 {
-  auto handleError = [&key](const std::string& message, const char* cause = nullptr){
-    std::ostringstream msg;
-    msg << message << key << " into cache";
-    if(cause){
-      msg << ' ' << cause;
-    }
-    return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
-  };
+  auto handleError =
+      [&key](const std::string& message, const char* cause = nullptr) {
+        std::ostringstream msg;
+        msg << message << key << " into cache.";
+        if (cause) {
+          msg << ' ' << cause;
+        }
+        return TRITONSERVER_ErrorNew(
+            TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
+      };
 
   try {
     _client->hmset(key, entry.items.begin(), entry.items.end());
@@ -192,10 +207,10 @@ RedisCache::Insert(const std::string& key, CacheEntry& entry)
     return handleError("Timeout inserting key: ", e.what());
   }
   catch (sw::redis::IoError& e) {
-    return handleError("Failed to insert key:", e.what());
+    return handleError("Failed to insert key: ", e.what());
   }
   catch (...) {
-    return handleError("Failed to insert key:");
+    return handleError("Failed to insert key: ");
   }
 
   return nullptr;  // success

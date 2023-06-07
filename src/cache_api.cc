@@ -128,12 +128,13 @@ TRITONCACHE_CacheLookup(
 
     const void* buffer = redisEntry.items.at(bufferFieldName).c_str();
 
-    RETURN_IF_ERROR(
-        TRITONCACHE_CacheEntryAddBuffer(entry, (void*)buffer, attrs));
+    RETURN_IF_ERROR(TRITONCACHE_CacheEntryAddBuffer(
+        entry, const_cast<void*>(buffer), attrs));
 
     TRITONSERVER_BufferAttributesDelete(attrs);
   }
 
+  // Callback to copy directly from RedisCache buffers into Triton buffers
   RETURN_IF_ERROR(TRITONCACHE_Copy(allocator, entry));
 
   return nullptr;  // success
@@ -182,8 +183,10 @@ TRITONCACHE_CacheInsert(
 
     std::shared_ptr<char[]> managedBuffer(new char[byteSize]);
 
+    // Overwrite entry buffer with cache-allocated buffer.
+    // No need to set new buffer attrs for now, will reuse the one we got above.
     TRITONCACHE_CacheEntrySetBuffer(
-        entry, i, (void*)managedBuffer.get(), nullptr);
+        entry, i, static_cast<void*>(managedBuffer.get()), nullptr /* attrs */);
 
     managedBuffers.push_back(managedBuffer);
     redis_entry.items.insert(std::make_pair(
@@ -195,6 +198,7 @@ TRITONCACHE_CacheInsert(
         std::to_string(memoryTypeId)));
   }
 
+  // Callback to copy directly from Triton buffers to RedisCache managedBuffers
   TRITONCACHE_Copy(allocator, entry);
   for (size_t i = 0; i < numBuffers; i++) {
     auto bytesToCopy =
@@ -205,7 +209,7 @@ TRITONCACHE_CacheInsert(
   }
 
   // sanity check to make sure we are inserting items into the cache that are
-  // comprised of the right number of fields to allow us to marshall
+  // comprised of the right number of fields to allow us to marshal
   // the buffer back from Redis later on.
   if (redis_entry.items.size() % FIELDS_PER_BUFFER != 0) {
     return TRITONSERVER_ErrorNew(
