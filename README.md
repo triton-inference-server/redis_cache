@@ -82,7 +82,7 @@ The `--cache-config` option is variadic, meaning it can be repeated multiple
 times to set multiple configuration fields. The format of a `--cache-config`
 option is `<cache_name>,<key>=<value>`. At a minimum you must provide a `host`
 and `port` to allow the client to connect to Redis e.g. let's try connecting to
-a redis instance living on the hose `redis-host` and listening on port `6379`:
+a redis instance living on the host `redis-host` and listening on port `6379`:
 
 ```
 tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
