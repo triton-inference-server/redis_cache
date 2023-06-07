@@ -1,0 +1,26 @@
+version: "3.7"
+
+services:
+  triton-redis:
+    image: redis
+    ports:
+    - '6379:6379'
+  triton-server:
+    deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: 1
+                capabilities: [gpu]
+    links:
+      -   triton-redis
+    build: 
+      context: .
+    command: tritonserver --cache-config redis,host=triton-redis --cache-config redis,port=6379 --model-repository=/models
+    ports:
+      - '8000:8000'
+      - '8001:8001'
+      - '8002:8002'
+    volumes:
+      - ../server/docs/examples/model_repository:/models

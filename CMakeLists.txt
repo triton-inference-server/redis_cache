@@ -24,8 +24,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.21)
 project(tritonrediscache LANGUAGES C CXX)
+set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #
 # Options
@@ -34,9 +36,7 @@ project(tritonrediscache LANGUAGES C CXX)
 # projects included in this one by FetchContent.
 #
 set(TRITON_COMMON_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/common repo")
-# TODO: set default branch name to main
-set(TRITON_CORE_REPO_TAG "rmccormick-cache-api" CACHE STRING "Tag for triton-inference-server/core repo")
-#set(TRITON_CORE_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/core repo")
+set(TRITON_CORE_REPO_TAG "main" CACHE STRING "Tag for triton-inference-server/core repo")
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -62,7 +62,18 @@ FetchContent_Declare(
   GIT_TAG ${TRITON_CORE_REPO_TAG}
   GIT_SHALLOW ON
 )
+
 FetchContent_MakeAvailable(repo-common repo-core)
+
+## Run the build_deps.sh script with execute_process
+execute_process(
+  COMMAND ./build_deps.sh
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+## Add redis++ library to the project
+find_library(REDISPP redis++ PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
+find_library(HIREDIS hiredis PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
 
 #
 # Shared library implementing the Triton Cache API
@@ -71,6 +82,7 @@ configure_file(src/libtritoncache_redis.ldscript libtritoncache_redis.ldscript C
 
 add_library(
   triton-redis-cache SHARED
+  src/cache_api.cc
   src/redis_cache.cc
 )
 
@@ -78,6 +90,7 @@ add_library(
   TritonRedisCache::triton-redis-cache ALIAS triton-redis-cache
 )
 
+include_directories(build/install/include)
 target_include_directories(
   triton-redis-cache
   PUBLIC
@@ -85,6 +98,7 @@ target_include_directories(
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
+
 
 target_compile_features(triton-redis-cache PRIVATE cxx_std_20)
 target_compile_options(
@@ -95,10 +109,14 @@ target_compile_options(
 
 target_link_libraries(
   triton-redis-cache
+  PUBLIC
+    ${HIREDIS}
+    ${REDISPP}
   PRIVATE
     triton-core-serverapi   # from repo-core
     triton-core-cacheapi    # from repo-core
     triton-core-serverstub  # from repo-core
+    triton-common-logging   # from-repo-common
 )
 
 set_target_properties(
@@ -134,6 +152,7 @@ install(
   DESTINATION
     ${INSTALL_CONFIGDIR}
 )
+
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
