@@ -32,7 +32,7 @@
 
 This repo contains an example
 [cache](https://github.com/triton-inference-server/core/blob/main/include/triton/core/tritoncache.h)
-for caching data with Redis.
+for caching data with [Redis](https://redis.io/).
 
 Ask questions or report problems in the main Triton [issues
 page](https://github.com/triton-inference-server/server/issues).

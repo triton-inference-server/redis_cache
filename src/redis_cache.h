@@ -44,7 +44,7 @@ struct CacheEntry {
   std::unordered_map<std::string, std::string> items;
 };
 
-// This is the number of fields that are created to each buffer to marshall
+// This is the number of fields that are created to each buffer to marshal
 // the buffer back to Triton
 constexpr uint32_t FIELDS_PER_BUFFER = 4;
 
