@@ -89,6 +89,15 @@ setOption(
   }
 }
 
+TRITONSERVER_Error*
+handleError(
+    const std::string& message, const std::string& key,
+    const std::string& cause)
+{
+  std::ostringstream msg;
+  msg << message << key << " from cache. " << cause;
+  return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
+}
 
 TRITONSERVER_Error*
 RedisCache::Create(
@@ -153,17 +162,6 @@ RedisCache::~RedisCache()
 std::pair<TRITONSERVER_Error*, CacheEntry>
 RedisCache::Lookup(const std::string& key)
 {
-  auto handleError =
-      [&key](const std::string& message, const char* cause = nullptr) {
-        std::ostringstream msg;
-        msg << message << key << " from cache.";
-        if (cause) {
-          msg << ' ' << cause;
-        }
-        return TRITONSERVER_ErrorNew(
-            TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
-      };
-
   CacheEntry entry;
 
   try {
@@ -175,42 +173,37 @@ RedisCache::Lookup(const std::string& key)
     entry.numBuffers = entry.items.size() / FIELDS_PER_BUFFER;
     return {nullptr, entry};
   }
-  catch (sw::redis::TimeoutError& e) {
-    return {handleError("Timeout retrieving key: ", e.what()), {}};
+  catch (const sw::redis::TimeoutError& e) {
+    return {handleError("Timeout retrieving key: ", key, e.what()), {}};
   }
-  catch (sw::redis::IoError& e) {
-    return {handleError("Failed to retrieve key: ", e.what()), {}};
+  catch (const sw::redis::IoError& e) {
+    return {handleError("Failed to retrieve key: ", key, e.what()), {}};
+  }
+  catch (const std::exception& e) {
+    return {handleError("Failed to retrieve key: ", key, e.what()), {}};
   }
   catch (...) {
-    return {handleError("Failed to retrieve key: "), {}};
+    return {handleError("Failed to retrieve key: ", key, "Unknown error."), {}};
   }
 }
 
 TRITONSERVER_Error*
 RedisCache::Insert(const std::string& key, CacheEntry& entry)
 {
-  auto handleError =
-      [&key](const std::string& message, const char* cause = nullptr) {
-        std::ostringstream msg;
-        msg << message << key << " into cache.";
-        if (cause) {
-          msg << ' ' << cause;
-        }
-        return TRITONSERVER_ErrorNew(
-            TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
-      };
-
   try {
     _client->hmset(key, entry.items.begin(), entry.items.end());
   }
-  catch (sw::redis::TimeoutError& e) {
-    return handleError("Timeout inserting key: ", e.what());
+  catch (const sw::redis::TimeoutError& e) {
+    return handleError("Timeout inserting key: ", key, e.what());
   }
-  catch (sw::redis::IoError& e) {
-    return handleError("Failed to insert key: ", e.what());
+  catch (const sw::redis::IoError& e) {
+    return handleError("Failed to insert key: ", key, e.what());
+  }
+  catch (const std::exception& e) {
+    return handleError("Failed to insert key: ", key, e.what());
   }
   catch (...) {
-    return handleError("Failed to insert key: ");
+    return handleError("Failed to insert key: ", key, "Unknown error.");
   }
 
   return nullptr;  // success
