@@ -95,7 +95,7 @@ handleError(
     const std::string& cause)
 {
   std::ostringstream msg;
-  msg << message << key << " from cache. " << cause;
+  msg << message << key << ". " << cause;
   return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg.str().c_str());
 }
 
