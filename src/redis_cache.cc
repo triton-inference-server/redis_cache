@@ -132,16 +132,14 @@ RedisCache::Create(
   }
 
   //tls options
-  setOption("cert", options.tls.cert, document);
-  setOption("key", options.tls.key, document);
-  setOption("cacert", options.tls.cacert, document);
-  setOption("cacert_dir", options.tls.cacertdir, document);
-  setOption("sni", options.tls.sni, document);
-
-  if(!options.tls.cert.empty() || !options.tls.key.empty() || !options.tls.cacert.empty() || !options.tls.cacertdir.empty() || !options.tls.sni.empty()){
-    options.tls.enabled = true;
+  if(document.HasMember("tls_enabled")){
+    options.tls.enabled = strcmp(document["tls_enabled"].GetString(), "true") == 0;
+    setOption("cert", options.tls.cert, document);
+    setOption("key", options.tls.key, document);
+    setOption("cacert", options.tls.cacert, document);
+    setOption("cacert_dir", options.tls.cacertdir, document);
+    setOption("sni", options.tls.sni, document);
   }
-
 
   try {
     cache->reset(new RedisCache(options, poolOptions));

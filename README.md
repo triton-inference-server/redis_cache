@@ -104,6 +104,23 @@ tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
 | wait_timeout | No | The maximum time, in milliseconds to wait for a connection from the pool.                                                                   | 100 |
 
 
+### TLS
+
+Transport Layer Security (TLS) can be enabled in Redis and within the Triton Redis Cache, to do so you will need a TLS 
+enabled version of Redis, e.g. [OSS Redis](https://redis.io/docs/management/security/encryption/) or 
+[Redis Enterprise](https://docs.redis.com/latest/rs/security/tls/enable-tls/). You will also need to configure Triton Server to use TLS with Redis
+
+#### Configuration Items for TLS
+
+| Configuration Option | Required | Description                                           |
+|----------------------|----------|-------------------------------------------------------|
+| tls_enabled          | Yes      | set to `true` to enable TLS                           |
+| cert                 | no       | The certificate to use for TLS.                       |
+| key                  | no       | The certificate key to use for TLS.                   |
+| cacert               | No       | The Certificate Authority certificate to use for TLS. |
+| sni                  | No       | Server name indication for TLS.                       |
+
+
 ## Monitoring and Observability
 
 There are many ways to go about monitoring what's going on in Redis. One popular mode is to export metrics data from Redis to Prometheus, and use Grafana to observe them.
