@@ -116,6 +116,7 @@ There are many ways to go about monitoring what's going on in Redis. One popular
 You can try out the Redis Cache with Triton in docker:
 
 * clone this repo: `git clone https://github.com/triton-inference-server/redis_cache`
+* follow build instructions enumerated [above](https://github.com/triton-inference-server/redis_cache#build-the-cache)
 * clone the Triton server repo: `git clone https://github.com/triton-inference-server`
 * Add the following to: `docs/examples/model_repository/densenet_onnx/config.pbtxt`
 ```

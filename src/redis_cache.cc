@@ -131,6 +131,18 @@ RedisCache::Create(
     poolOptions.wait_timeout = std::chrono::milliseconds(100);
   }
 
+  //tls options
+  setOption("cert", options.tls.cert, document);
+  setOption("key", options.tls.key, document);
+  setOption("cacert", options.tls.cacert, document);
+  setOption("cacert_dir", options.tls.cacertdir, document);
+  setOption("sni", options.tls.sni, document);
+
+  if(!options.tls.cert.empty() || !options.tls.key.empty() || !options.tls.cacert.empty() || !options.tls.cacertdir.empty() || !options.tls.sni.empty()){
+    options.tls.enabled = true;
+  }
+
+
   try {
     cache->reset(new RedisCache(options, poolOptions));
   }

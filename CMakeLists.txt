@@ -74,6 +74,7 @@ execute_process(
 ## Add redis++ library to the project
 find_library(REDISPP redis++ PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
 find_library(HIREDIS hiredis PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
+find_library(HIREDIS_SSL hiredis_ssl PATHS build/install/lib NO_DEFAULT_PATH REQUIRED)
 
 #
 # Shared library implementing the Triton Cache API
@@ -111,6 +112,7 @@ target_link_libraries(
   triton-redis-cache
   PUBLIC
     ${HIREDIS}
+    ${HIREDIS_SSL}
     ${REDISPP}
   PRIVATE
     triton-core-serverapi   # from repo-core
