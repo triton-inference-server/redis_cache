@@ -48,6 +48,10 @@ struct CacheEntry {
 // the buffer back to Triton
 constexpr uint32_t FIELDS_PER_BUFFER = 4;
 
+constexpr const char* PASSWORD_ENV_VAR_NAME = "TRITONCACHE_REDIS_PASSWORD";
+constexpr const char* USERNAME_ENV_VAR_NAME = "TRITONCACHE_REDIS_USERNAME";
+
+
 #define RETURN_IF_ERROR(X)        \
   do {                            \
     TRITONSERVER_Error* err__(X); \

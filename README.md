@@ -93,16 +93,20 @@ tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
 
 | Configuration Option | Required | Description                                                                                                                                 | Default |
 |----------------------|----------|---------------------------------------------------------------------------------------------------------------------------------------------|---------|
-| host | Yes | The hostname or IP address of the server where Redis is running.                                                                            | N/A |
-| port | Yes | The port number to connect to on the server.                                                                                                | N/A |
+| host | Yes | The hostname or IP address of the server where Redis is running.                                                                            | N/A     |
+| port | Yes | The port number to connect to on the server.                                                                                                | N/A     |
 | user | No | The username to use for authentication of the ACLs to the Redis Server                                                                      | default |
-| password | No | The password to Redis.                                                                                                                      | N/A |
-| db | No | The db number to user. NOTE - use of the db number is considered an anti-pattern in Redis, so it is advised that you do not use this option | 0 |
-| connect_timeout | No | The maximum time, in milliseconds to wait for a connection to be established to Redis. 0 means wait forever                                 | 0 |
-| socket_timeout | No | The maximum time, in milliseconds the client will wait for a response from Redis. 0 means wait forever                                      | 0 |
-| pool_size | No | The number pooled connections to Redis the client will maintain.                                                                            | 1 |
-| wait_timeout | No | The maximum time, in milliseconds to wait for a connection from the pool.                                                                   | 100 |
+| password | No | The password to Redis.                                                                                                                      | N/A     |
+| db | No | The db number to user. NOTE - use of the db number is considered an anti-pattern in Redis, so it is advised that you do not use this option | 0       |
+| connect_timeout | No | The maximum time, in milliseconds to wait for a connection to be established to Redis. 0 means wait forever                                 | 0       |
+| socket_timeout | No | The maximum time, in milliseconds the client will wait for a response from Redis. 0 means wait forever                                      | 0       |
+| pool_size | No | The number pooled connections to Redis the client will maintain.                                                                            | 1       |
+| wait_timeout | No | The maximum time, in milliseconds to wait for a connection from the pool.                                                                   | 1000    |
 
+
+### Optional Environment Variables for Credentials
+
+Optionally you may configure your `user`/`password` via environment variables. The corresponding `user` environment variable is `TRITONCACHE_REDIS_USERNAME` whereas the corresponding `password` environment variable is `TRITONCACHE_REDIS_PASSWORD`.
 
 ## Monitoring and Observability
 
