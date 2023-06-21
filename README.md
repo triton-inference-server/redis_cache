@@ -106,7 +106,7 @@ tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
 
 ### Optional Environment Variables for Credentials
 
-Optionally you may configure your `user`/`password` via environment variables. The corresponding `user` environment variable is `TRITONCACHE_REDIS_USERNAME` whereas the corresponding password environment variable is `TRITONCACHE_REDIS_PASSWORD`.
+Optionally you may configure your `user`/`password` via environment variables. The corresponding `user` environment variable is `TRITONCACHE_REDIS_USERNAME` whereas the corresponding `password` environment variable is `TRITONCACHE_REDIS_PASSWORD`.
 
 ## Monitoring and Observability
 
