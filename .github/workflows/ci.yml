@@ -1,0 +1,14 @@
+name: "CI"
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+jobs:
+  tls:
+    runs-on: ubuntu-latest    
+    steps:
+      - uses: actions/checkout@v2
+      - name: execute
+        run: docker-compose -f ./examples/tls/docker-compose.yaml run client

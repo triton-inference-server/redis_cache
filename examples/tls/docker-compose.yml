@@ -1,6 +1,16 @@
 version: "3.7"
 
 services:
+  client:
+    # image: nvcr.io/nvidia/tritonserver:23.03-py3-sdk
+    build:
+      context: .
+    command: bash -c "sh /app/test.sh"
+    links:
+      - triton-server
+    volumes:
+      - .:/app
+      - ./certs:/certs
   triton-redis:
     image: redis
     command: "redis-server /conf/redis.conf"
