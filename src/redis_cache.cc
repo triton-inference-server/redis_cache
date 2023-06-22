@@ -89,6 +89,15 @@ setOption(
   }
 }
 
+void
+setOptionFromEnv(const char* envVarName, std::string& option)
+{
+  const char* envVarValue = std::getenv(envVarName);
+  if (envVarValue != nullptr) {
+    option = envVarValue;
+  }
+}
+
 TRITONSERVER_Error*
 handleError(
     const std::string& message, const std::string& key,
@@ -118,6 +127,11 @@ RedisCache::Create(
   sw::redis::ConnectionOptions options;
   sw::redis::ConnectionPoolOptions poolOptions;
 
+  // try pulling user/password from environment fist
+  // override if present in the config
+  setOptionFromEnv(USERNAME_ENV_VAR_NAME, options.user);
+  setOptionFromEnv(PASSWORD_ENV_VAR_NAME, options.password);
+
   setOption("host", options.host, document);
   setOption("port", options.port, document);
   setOption("user", options.user, document);
@@ -128,7 +142,7 @@ RedisCache::Create(
   setOption("pool_size", poolOptions.size, document);
   setOption("wait_timeout", poolOptions.wait_timeout, document);
   if (!document.HasMember("wait_timeout")) {
-    poolOptions.wait_timeout = std::chrono::milliseconds(100);
+    poolOptions.wait_timeout = std::chrono::milliseconds(1000);
   }
 
   //tls options
