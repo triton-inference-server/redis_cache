@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: apt install -y rapidjson-dev
+        run: sudo apt update && sudo apt install -y rapidjson-dev
       - name: build
         run: sh ./build.sh
       - name: execute
