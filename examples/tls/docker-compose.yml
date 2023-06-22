@@ -2,7 +2,6 @@ version: "3.7"
 
 services:
   client:
-    # image: nvcr.io/nvidia/tritonserver:23.03-py3-sdk
     build:
       context: .
     command: bash -c "sh /app/test.sh"
