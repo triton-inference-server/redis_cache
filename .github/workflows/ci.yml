@@ -10,5 +10,7 @@ jobs:
     runs-on: ubuntu-latest    
     steps:
       - uses: actions/checkout@v2
+      - name: build
+        run: sh ./build.sh
       - name: execute
-        run: docker-compose -f ./examples/tls/docker-compose.yaml run client
+        run: docker-compose -f ./examples/tls/docker-compose.yml run client
