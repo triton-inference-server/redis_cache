@@ -26,14 +26,15 @@
 
 #pragma once
 
+#include <sw/redis++/connection.h>
+#include <sw/redis++/redis++.h>
+
 #include <iostream>
 #include <list>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
-#include <sw/redis++/connection.h>
-#include <sw/redis++/redis++.h>
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
