@@ -15,7 +15,9 @@ jobs:
       - name: build
         run: sh ./build.sh
       - name: build test certs
-        run: . ./examples/tls/gen-certs.sh
+        run: |
+          . ./examples/tls/gen-certs.sh
+          chmod +x ./certs/ca.crt ./certs/redis.crt ./certs/redis.key
       - name: mv certs
         run:  mv certs examples/tls/
       - name: docker-compose up
