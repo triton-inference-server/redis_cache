@@ -16,18 +16,18 @@ services:
     ports:
       - '6379:6379'
     volumes:
-      - ./certs:/tls
+      - ./certs:/certs
       - ./conf:/conf
   triton-server:
     links:
       -   triton-redis
     build:
       context: ../..
-    command: tritonserver --cache-config redis,host=triton-redis --cache-config redis,port=6379 --cache-config redis,tls_enabled=true --cache-config redis,cert=/tls/redis.crt --cache-config redis,key=/tls/redis.key --cache-config redis,cacert=/tls/ca.crt --model-repository=/models
+    command: tritonserver --cache-config redis,host=triton-redis --cache-config redis,port=6379 --cache-config redis,tls_enabled=true --cache-config redis,cert=/certs/redis.crt --cache-config redis,key=/certs/redis.key --cache-config redis,cacert=/certs/ca.crt --model-repository=/models
     ports:
       - '8000:8000'
       - '8001:8001'
       - '8002:8002'
     volumes:
       - ../model_repository:/models
-      - ./certs:/tls
+      - ./certs:/certs
