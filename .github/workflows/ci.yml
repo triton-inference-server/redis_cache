@@ -14,5 +14,11 @@ jobs:
         run: sudo apt update && sudo apt install -y rapidjson-dev
       - name: build
         run: sh ./build.sh
+      - name: docker-compose up
+        run: docker-compose -f ./examples/tls/docker-compose.yml up -d
+      - name: docker-log redis
+        run: docker logs tls_triton-redis_1
+      - name: docker-log triton
+        run: docker logs tls_triton-server_1
       - name: execute
         run: docker-compose -f ./examples/tls/docker-compose.yml run client
