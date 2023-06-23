@@ -5,3 +5,5 @@
 cmake-build-debug
 third-party
 examples/tls/certs
+/examples/model_repository/densenet_onnx/1
+/examples/model_repository/inception_graphdef/1

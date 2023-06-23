@@ -14,6 +14,8 @@ jobs:
         run: sudo apt update && sudo apt install -y rapidjson-dev
       - name: build
         run: sh ./build.sh
+      - name: prepare models
+        run: cd examples && . fetch_model.sh && cd ..
       - name: build test certs
         run: |
           . ./examples/tls/gen-certs.sh
