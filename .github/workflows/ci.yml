@@ -13,12 +13,12 @@ jobs:
       - name: install dependencies
         run: sudo apt update && sudo apt install -y rapidjson-dev
       - name: build
-        run: sh ./build.sh
+        run: bash ./build.sh
       - name: prepare models
-        run: cd examples && . fetch_model.sh && cd ..
+        run: cd examples && source fetch_model.sh && cd ..
       - name: build test certs
         run: |
-          . ./examples/tls/gen-certs.sh
+          source ./examples/tls/gen-certs.sh
           chmod +r ./certs/ca.crt ./certs/redis.crt ./certs/redis.key
       - name: mv certs
         run:  mv certs examples/tls/
