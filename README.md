@@ -113,6 +113,7 @@ Optionally you may configure your `user`/`password` via environment variables. T
 Transport Layer Security (TLS) can be enabled in Redis and within the Triton Redis Cache, to do so you will need a TLS 
 enabled version of Redis, e.g. [OSS Redis](https://redis.io/docs/management/security/encryption/) or 
 [Redis Enterprise](https://docs.redis.com/latest/rs/security/tls/enable-tls/). You will also need to configure Triton Server to use TLS with Redis
+through the following `--cache-config` TLS options.
 
 #### Configuration Items for TLS
 
@@ -157,7 +158,7 @@ Password: <MY API KEY>
 > NOTE: Username: $oauthtoken in this context means that your username is literally $oauthtoken - your API key serves as the unique part of your credentials
 * run `docker-compose build`
 * run `docker-compose up`
-* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.03-py3-sdk`
+* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.06-py3-sdk`
 * Run `/workspace/install/bin/image_client -m densenet_onnx -c 3 -s INCEPTION /workspace/images/mug.jpg`
   * on the first run - this will miss the cache
   * subsequent runs will pull the inference out of the cache

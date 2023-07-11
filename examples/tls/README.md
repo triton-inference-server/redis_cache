@@ -8,7 +8,7 @@ This environment demonstrates how to run the Triton Redis Cache against a TLS en
 * follow build instructions enumerated [in the README](https://github.com/triton-inference-server/redis_cache#build-the-cache)
 * cd into `redis_cache/docker/tls`
 * run `sh run-tls.sh`
-* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.03-py3-sdk`
+* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.06-py3-sdk`
 * Run `/workspace/install/bin/image_client -m densenet_onnx -c 3 -s INCEPTION /workspace/images/mug.jpg`
     * on the first run - this will miss the cache
     * subsequent runs will pull the inference out of the cache
