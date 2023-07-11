@@ -9,7 +9,7 @@ fi
 
 numKeys=$(redis-cli -h triton-redis --tls --cert /certs/redis.crt --key /certs/redis.key --cacert /certs/ca.crt DBSIZE) # check that there's only one key
 
-if [[ $numKeys -eq 1 ]]; then    
+if [[ $numKeys -eq 1 ]]; then
     exit 0
 else
     echo "Redis did not have the expected number of keys."

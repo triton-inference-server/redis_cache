@@ -110,8 +110,8 @@ Optionally you may configure your `user`/`password` via environment variables. T
 
 ### TLS
 
-Transport Layer Security (TLS) can be enabled in Redis and within the Triton Redis Cache, to do so you will need a TLS 
-enabled version of Redis, e.g. [OSS Redis](https://redis.io/docs/management/security/encryption/) or 
+Transport Layer Security (TLS) can be enabled in Redis and within the Triton Redis Cache, to do so you will need a TLS
+enabled version of Redis, e.g. [OSS Redis](https://redis.io/docs/management/security/encryption/) or
 [Redis Enterprise](https://docs.redis.com/latest/rs/security/tls/enable-tls/). You will also need to configure Triton Server to use TLS with Redis
 through the following `--cache-config` TLS options.
 

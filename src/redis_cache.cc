@@ -146,9 +146,10 @@ RedisCache::Create(
     poolOptions.wait_timeout = std::chrono::milliseconds(1000);
   }
 
-  //tls options
-  if(document.HasMember("tls_enabled")){
-    options.tls.enabled = strcmp(document["tls_enabled"].GetString(), "true") == 0;
+  // tls options
+  if (document.HasMember("tls_enabled")) {
+    options.tls.enabled =
+        strcmp(document["tls_enabled"].GetString(), "true") == 0;
     setOption("cert", options.tls.cert, document);
     setOption("key", options.tls.key, document);
     setOption("cacert", options.tls.cacert, document);
