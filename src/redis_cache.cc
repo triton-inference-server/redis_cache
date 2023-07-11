@@ -24,10 +24,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "redis_cache.h"
+
 #include <sstream>
 
 #include "rapidjson/document.h"
-#include "redis_cache.h"
 #include "triton/common/logging.h"
 #include "triton/core/tritoncache.h"
 

@@ -8,7 +8,7 @@ services:
   triton-server:
     links:
       -   triton-redis
-    build: 
+    build:
       context: .
     command: tritonserver --cache-config redis,host=triton-redis --cache-config redis,port=6379 --model-repository=/models
     ports:
