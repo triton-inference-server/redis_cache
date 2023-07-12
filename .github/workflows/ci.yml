@@ -1,0 +1,28 @@
+name: "CI"
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+jobs:
+  tls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: sudo apt update && sudo apt install -y rapidjson-dev
+      - name: build
+        run: bash ./build.sh
+      - name: prepare models
+        run: cd examples && source fetch_model.sh && cd ..
+      - name: build test certs
+        run: |
+          source ./examples/tls/gen-certs.sh
+          chmod +r ./certs/ca.crt ./certs/redis.crt ./certs/redis.key
+      - name: mv certs
+        run:  mv certs examples/tls/
+      - name: docker-compose up
+        run: docker-compose -f ./examples/tls/docker-compose.yml up -d
+      - name: execute
+        run: docker-compose -f ./examples/tls/docker-compose.yml run client

@@ -108,6 +108,23 @@ tritonserver --cache-config redis,host=redis-host --cache-config redis,port=6379
 
 Optionally you may configure your `user`/`password` via environment variables. The corresponding `user` environment variable is `TRITONCACHE_REDIS_USERNAME` whereas the corresponding `password` environment variable is `TRITONCACHE_REDIS_PASSWORD`.
 
+### TLS
+
+Transport Layer Security (TLS) can be enabled in Redis and within the Triton Redis Cache, to do so you will need a TLS
+enabled version of Redis, e.g. [OSS Redis](https://redis.io/docs/management/security/encryption/) or
+[Redis Enterprise](https://docs.redis.com/latest/rs/security/tls/enable-tls/). You will also need to configure Triton Server to use TLS with Redis
+through the following `--cache-config` TLS options.
+
+#### Configuration Items for TLS
+
+| Configuration Option | Required | Description                                           |
+|----------------------|----------|-------------------------------------------------------|
+| tls_enabled          | Yes      | set to `true` to enable TLS                           |
+| cert                 | no       | The certificate to use for TLS.                       |
+| key                  | no       | The certificate key to use for TLS.                   |
+| cacert               | No       | The Certificate Authority certificate to use for TLS. |
+| sni                  | No       | Server name indication for TLS.                       |
+
 ## Monitoring and Observability
 
 There are many ways to go about monitoring what's going on in Redis. One popular mode is to export metrics data from Redis to Prometheus, and use Grafana to observe them.
@@ -120,6 +137,7 @@ There are many ways to go about monitoring what's going on in Redis. One popular
 You can try out the Redis Cache with Triton in docker:
 
 * clone this repo: `git clone https://github.com/triton-inference-server/redis_cache`
+* follow build instructions enumerated [above](https://github.com/triton-inference-server/redis_cache#build-the-cache)
 * clone the Triton server repo: `git clone https://github.com/triton-inference-server`
 * Add the following to: `docs/examples/model_repository/densenet_onnx/config.pbtxt`
 ```
@@ -140,7 +158,7 @@ Password: <MY API KEY>
 > NOTE: Username: $oauthtoken in this context means that your username is literally $oauthtoken - your API key serves as the unique part of your credentials
 * run `docker-compose build`
 * run `docker-compose up`
-* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.03-py3-sdk`
+* In a separate terminal run `docker run -it --rm --net=host nvcr.io/nvidia/tritonserver:23.06-py3-sdk`
 * Run `/workspace/install/bin/image_client -m densenet_onnx -c 3 -s INCEPTION /workspace/images/mug.jpg`
   * on the first run - this will miss the cache
   * subsequent runs will pull the inference out of the cache
