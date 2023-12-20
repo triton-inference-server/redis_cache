@@ -217,7 +217,7 @@ TRITONSERVER_Error*
 RedisCache::Insert(const std::string& key, CacheEntry& entry)
 {
   try {
-    _client->hmset(key, entry.items.begin(), entry.items.end());
+    _client->hset(key, entry.items.begin(), entry.items.end());
   }
   catch (const sw::redis::TimeoutError& e) {
     return handleError("Timeout inserting key: ", key, e.what());
