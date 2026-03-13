@@ -41,8 +41,8 @@ init_client(
 {
   std::unique_ptr<sw::redis::Redis> redis =
       std::make_unique<sw::redis::Redis>(connectionOptions, poolOptions);
-  const auto msg = "Triton RedisCache client connected";
-  if (redis->ping(msg) != msg) {
+  const auto msg = "PONG";
+  if (redis->ping() != msg) {
     throw std::runtime_error("Failed to ping Redis server.");
   }
 
