@@ -1,8 +1,21 @@
+#include <charconv>
+
 #include "redis_cache.h"
 #include "triton/core/tritoncache.h"
 #include "triton/core/tritonserver.h"
 
 namespace triton::cache::redis {
+
+// Redis values are untrusted. Parse without throwing so a corrupt entry
+// becomes a cache miss instead of terminating the server.
+template <typename T>
+bool
+ParseNumber(const std::string& text, T* value)
+{
+  const char* end = text.data() + text.size();
+  auto [ptr, ec] = std::from_chars(text.data(), end, *value);
+  return ec == std::errc() && ptr == end;
+}
 
 enum fieldType { buffer, bufferSize, memoryType, memoryTypeId };
 
@@ -113,11 +126,18 @@ TRITONCACHE_CacheLookup(
     }
     TRITONSERVER_BufferAttributes* attrs = nullptr;
 
-    size_t byteSize = std::stoul(redisEntry.items.at(bufferSizeFieldName));
-    int memoryTypeIntegralValue =
-        std::stoi(redisEntry.items.at(memoryTypeFieldName));
-    int64_t memoryTypeIdValue =
-        std::stoi(redisEntry.items.at(memoryTypeIdFieldName));
+    size_t byteSize = 0;
+    int memoryTypeIntegralValue = 0;
+    int memoryTypeIdValue = 0;
+    if (!ParseNumber(redisEntry.items.at(bufferSizeFieldName), &byteSize) ||
+        !ParseNumber(
+            redisEntry.items.at(memoryTypeFieldName),
+            &memoryTypeIntegralValue) ||
+        !ParseNumber(
+            redisEntry.items.at(memoryTypeIdFieldName), &memoryTypeIdValue)) {
+      auto msg = "Error: encountered corrupt cache result.";
+      return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg);
+    }
 
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesNew(&attrs));
     RETURN_IF_ERROR(
