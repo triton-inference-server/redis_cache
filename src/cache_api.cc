@@ -119,6 +119,13 @@ TRITONCACHE_CacheLookup(
     int64_t memoryTypeIdValue =
         std::stoi(redisEntry.items.at(memoryTypeIdFieldName));
 
+    // The recorded size must match the stored buffer, otherwise the copy
+    // below would read past the end of it.
+    if (byteSize != redisEntry.items.at(bufferFieldName).size()) {
+      auto msg = "Error: cache result buffer size does not match its data.";
+      return TRITONSERVER_ErrorNew(TRITONSERVER_ERROR_INTERNAL, msg);
+    }
+
     RETURN_IF_ERROR(TRITONSERVER_BufferAttributesNew(&attrs));
     RETURN_IF_ERROR(
         TRITONSERVER_BufferAttributesSetMemoryTypeId(attrs, memoryTypeIdValue));
